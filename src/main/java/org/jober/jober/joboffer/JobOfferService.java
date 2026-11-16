@@ -12,6 +12,12 @@ import org.jober.jober.joboffer.dto.JobOfferCreateRequest;
 import org.jober.jober.joboffer.dto.JobOfferUpdateRequest;
 import org.jober.jober.joboffer.dto.JobOfferResponse;
 
+import org.jober.jober.common.enums.JobType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +38,61 @@ public class JobOfferService {
         this.jobOfferRepository = jobOfferRepository;
         this.companyRepository = companyRepository;
     }
+
+
+public Page<JobOfferResponse> getAll(
+        JobType type,
+        String location,
+        Long companyId,
+        BigDecimal minSalary,
+        Boolean active,
+        Pageable pageable) {
+
+    if (minSalary != null && minSalary.signum() < 0) {
+        throw new BadRequestException(
+                "Minimum salary cannot be negative");
+    }
+
+    Specification<JobOffer> spec =
+            (root, query, cb) -> cb.conjunction();
+
+    if (type != null) {
+        spec = spec.and((root, query, cb) ->
+                cb.equal(root.get("jobType"), type));
+    }
+
+    if (location != null && !location.isBlank()) {
+        spec = spec.and((root, query, cb) ->
+                cb.like(
+                        cb.lower(root.get("location")),
+                        "%" + location.toLowerCase().trim() + "%"
+                ));
+    }
+
+    if (companyId != null) {
+        spec = spec.and((root, query, cb) ->
+                cb.equal(
+                        root.get("company").get("id"),
+                        companyId
+                ));
+    }
+
+    if (minSalary != null) {
+        spec = spec.and((root, query, cb) ->
+                cb.greaterThanOrEqualTo(
+                        root.get("salaryMin"),
+                        minSalary
+                ));
+    }
+
+    if (active != null) {
+        spec = spec.and((root, query, cb) ->
+                cb.equal(root.get("active"), active));
+    }
+
+    return jobOfferRepository.findAll(spec, pageable)
+            .map(this::toResponse);
+}
 
     // Get job offer by ID
     public JobOfferResponse getById(Long id) {
