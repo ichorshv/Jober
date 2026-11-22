@@ -151,16 +151,16 @@ public class CompanyService {
 
     private void validateName(String name, Long excludeId) {
 
-        boolean exists = excludeId == null
-                ? companyRepository.existsByName(name)
-                : companyRepository.existsByNameAndIdNot(
-                        name, excludeId);
+    boolean exists = excludeId == null
+            ? companyRepository.existsByNameIgnoreCase(name)
+            : companyRepository.existsByNameIgnoreCaseAndIdNot(
+                    name, excludeId);
 
-        if (exists) {
-            throw new ConflictException(
-                    "Company name already exists");
-        }
+    if (exists) {
+        throw new ConflictException(
+                "Company name already exists");
     }
+}
 
     private CompanyResponse toResponse(Company company) {
         return new CompanyResponse(

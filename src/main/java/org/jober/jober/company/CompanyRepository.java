@@ -11,7 +11,8 @@ public interface CompanyRepository
     boolean existsByEmailIgnoreCaseAndIdNot(
             String email, Long id);
 
-    boolean existsByName(String name);
+    boolean existsByNameIgnoreCase(String name);
 
-    boolean existsByNameAndIdNot(String name, Long id);
+    boolean existsByNameIgnoreCaseAndIdNot(
+            String name, Long id);
 }
