@@ -7,6 +7,8 @@ import org.jober.jober.common.web.CurrentUser;
 import org.jober.jober.joboffer.dto.JobOfferCreateRequest;
 import org.jober.jober.joboffer.dto.JobOfferUpdateRequest;
 import org.jober.jober.joboffer.dto.JobOfferResponse;
+import org.jober.jober.joboffer.dto.PopularJobOfferResponse;
+import java.util.List;
 
 import org.jober.jober.common.enums.JobType;
 import org.jober.jober.common.web.PageResponse;
@@ -47,6 +49,15 @@ public PageResponse<JobOfferResponse> getAll(
             )
     );
 }
+
+    // Get most popular job offers
+@GetMapping("/popular")
+public List<PopularJobOfferResponse> getPopularJobOffers(
+        @RequestParam(defaultValue = "1") long minApplications) {
+
+    return jobOfferService.getPopularJobOffers(minApplications);
+}
+
 
     // Get a job offer by ID
     @GetMapping("/{id}")

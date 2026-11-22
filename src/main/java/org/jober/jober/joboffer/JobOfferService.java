@@ -11,6 +11,9 @@ import org.jober.jober.common.web.CurrentUser;
 import org.jober.jober.joboffer.dto.JobOfferCreateRequest;
 import org.jober.jober.joboffer.dto.JobOfferUpdateRequest;
 import org.jober.jober.joboffer.dto.JobOfferResponse;
+import org.jober.jober.common.enums.ApplicationStatus;
+import org.jober.jober.joboffer.dto.PopularJobOfferResponse;
+import java.util.List;
 
 import org.jober.jober.common.enums.JobType;
 import org.springframework.data.domain.Page;
@@ -94,6 +97,20 @@ public Page<JobOfferResponse> getAll(
             .map(this::toResponse);
 }
 
+    // Get popular job offers based on application count
+public List<PopularJobOfferResponse> getPopularJobOffers(
+        long minApplications) {
+
+    if (minApplications < 1) {
+        throw new BadRequestException(
+                "Minimum applications must be at least 1");
+    }
+
+    return jobOfferRepository.findPopularJobOffers(
+            minApplications,
+            ApplicationStatus.SAVED
+    );
+}
     // Get job offer by ID
     public JobOfferResponse getById(Long id) {
         return toResponse(findJobOffer(id));

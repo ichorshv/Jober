@@ -1,8 +1,16 @@
 
 package org.jober.jober.joboffer;
 
+import jakarta.persistence.EntityManager;
+
 import org.jober.jober.JoberApplication;
 import org.jober.jober.TestcontainersConfiguration;
+import org.jober.jober.application.Application;
+import org.jober.jober.application.ApplicationRepository;
+import org.jober.jober.company.CompanyRepository;
+import org.jober.jober.common.enums.ApplicationStatus;
+import org.jober.jober.common.enums.JobType;
+import org.jober.jober.student.Student;
 
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +22,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -26,14 +37,25 @@ class JobOfferControllerIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private JobOfferRepository jobOfferRepository;
+
+    @Autowired
+    private CompanyRepository companyRepository;
+
+    @Autowired
+    private ApplicationRepository applicationRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
     @Test
     void getJobOfferByIdReturns200() throws Exception {
         mockMvc.perform(get("/api/job-offers/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Java Intern"))
-                .andExpect(jsonPath("$.companyName")
-                        .value("Acme Software"));
+                .andExpect(jsonPath("$.companyName").value("Acme Software"));
     }
 
     @Test
@@ -56,8 +78,7 @@ class JobOfferControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title")
-                        .value("Spring Boot Intern"))
+                .andExpect(jsonPath("$.title").value("Spring Boot Intern"))
                 .andExpect(jsonPath("$.companyId").value(1))
                 .andExpect(jsonPath("$.active").value(true));
     }
@@ -101,8 +122,7 @@ class JobOfferControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title")
-                        .value("Updated Java Intern"));
+                .andExpect(jsonPath("$.title").value("Updated Java Intern"));
     }
 
     @Test
@@ -131,5 +151,66 @@ class JobOfferControllerIntegrationTest {
                         .header("X-User-Role", "COMPANY"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.active").value(false));
+    }
+
+    @Test
+    void popularOffersCountRealApplicationsOnly() throws Exception {
+
+        // Create a separate job offer for the test
+        JobOffer offer = new JobOffer();
+        offer.setCompany(companyRepository.findById(1L).orElseThrow());
+        offer.setTitle("Popular Test Internship");
+        offer.setDescription("Integration test position");
+        offer.setJobType(JobType.INTERNSHIP);
+        offer.setLocation("Sofia");
+        offer.setDeadline(LocalDate.now().plusDays(30));
+        offer.setActive(true);
+
+        offer = jobOfferRepository.saveAndFlush(offer);
+
+        // Two students actually apply
+        createTestApplication(1L, offer, ApplicationStatus.APPLIED);
+        createTestApplication(2L, offer, ApplicationStatus.APPLIED);
+
+        // Third student only saves the offer
+        createTestApplication(3L, offer, ApplicationStatus.SAVED);
+
+        applicationRepository.flush();
+
+        // Request offers with at least 2 applications
+        mockMvc.perform(get("/api/job-offers/popular")
+                        .param("minApplications", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(
+                        "$[?(@.title == 'Popular Test Internship')].applicationCount")
+                        .value(contains(2)));
+    }
+
+    @Test
+    void popularOffersRejectInvalidMinimum() throws Exception {
+        mockMvc.perform(get("/api/job-offers/popular")
+                        .param("minApplications", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // Helper method used by the integration test
+    private void createTestApplication(
+            Long studentId,
+            JobOffer offer,
+            ApplicationStatus status) {
+
+        Application application = new Application();
+
+        application.setStudent(
+                entityManager.getReference(Student.class, studentId));
+
+        application.setJobOffer(offer);
+        application.setStatus(status);
+
+        if (status != ApplicationStatus.SAVED) {
+            application.setAppliedDate(LocalDate.now());
+        }
+
+        applicationRepository.save(application);
     }
 }
