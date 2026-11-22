@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -32,4 +34,23 @@ public interface JobOfferRepository
             @Param("minApplications") long minApplications,
             @Param("savedStatus") ApplicationStatus savedStatus
     );
+
+@Query("""
+        SELECT j
+        FROM JobOffer j
+        WHERE j.active = true
+          AND NOT EXISTS (
+              SELECT a.id
+              FROM Application a
+              WHERE a.jobOffer = j
+                AND a.student.id = :studentId
+                AND a.status <> :savedStatus
+          )
+        """)
+Page<JobOffer> findNotAppliedJobOffers(
+        @Param("studentId") Long studentId,
+        @Param("savedStatus") ApplicationStatus savedStatus,
+        Pageable pageable
+);
+
 }

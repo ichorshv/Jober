@@ -213,4 +213,76 @@ class JobOfferControllerIntegrationTest {
 
         applicationRepository.save(application);
     }
+
+
+
+@Test
+void studentSeesOnlyNotAppliedActiveOffers() throws Exception {
+
+    // Student 1 saves this offer but does not apply
+    JobOffer savedOffer = createTestOffer(
+            "Saved Test Internship", true);
+
+    createTestApplication(
+            1L, savedOffer, ApplicationStatus.SAVED);
+
+    // Student 1 applies to this offer
+    JobOffer appliedOffer = createTestOffer(
+            "Applied Test Internship", true);
+
+    createTestApplication(
+            1L, appliedOffer, ApplicationStatus.APPLIED);
+
+    // This offer is inactive
+    JobOffer inactiveOffer = createTestOffer(
+            "Inactive Test Internship", false);
+
+    applicationRepository.flush();
+
+    mockMvc.perform(get("/api/job-offers/not-applied")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "STUDENT")
+                    .param("page", "0")
+                    .param("size", "100"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath(
+                    "$.content[?(@.title == 'Saved Test Internship')]")
+                    .exists())
+            .andExpect(jsonPath(
+                    "$.content[?(@.title == 'Applied Test Internship')]")
+                    .doesNotExist())
+            .andExpect(jsonPath(
+                    "$.content[?(@.title == 'Inactive Test Internship')]")
+                    .doesNotExist());
+}
+
+@Test
+void companyCannotAccessNotAppliedOffers() throws Exception {
+
+    mockMvc.perform(get("/api/job-offers/not-applied")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "COMPANY"))
+            .andExpect(status().isForbidden());
+}
+
+// Helper method for creating test job offers
+private JobOffer createTestOffer(
+        String title,
+        boolean active) {
+
+    JobOffer offer = new JobOffer();
+
+    offer.setCompany(
+            companyRepository.findById(1L).orElseThrow());
+
+    offer.setTitle(title);
+    offer.setDescription("Integration test position");
+    offer.setJobType(JobType.INTERNSHIP);
+    offer.setLocation("Sofia");
+    offer.setDeadline(LocalDate.now().plusDays(30));
+    offer.setActive(active);
+
+    return jobOfferRepository.saveAndFlush(offer);
+}
+
 }

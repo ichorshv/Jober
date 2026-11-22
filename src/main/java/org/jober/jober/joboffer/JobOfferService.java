@@ -13,6 +13,7 @@ import org.jober.jober.joboffer.dto.JobOfferUpdateRequest;
 import org.jober.jober.joboffer.dto.JobOfferResponse;
 import org.jober.jober.common.enums.ApplicationStatus;
 import org.jober.jober.joboffer.dto.PopularJobOfferResponse;
+import org.jober.jober.common.enums.ApplicationStatus;
 import java.util.List;
 
 import org.jober.jober.common.enums.JobType;
@@ -111,6 +112,22 @@ public List<PopularJobOfferResponse> getPopularJobOffers(
             ApplicationStatus.SAVED
     );
 }
+
+    // Get active offers the current student has not applied to
+    public Page<JobOfferResponse> getNotAppliedJobOffers(
+            CurrentUser user,
+            Pageable pageable) {
+
+        // Only students can access this functionality
+        user.requireRole(UserRole.STUDENT);
+
+        return jobOfferRepository.findNotAppliedJobOffers(
+                user.id(),
+                ApplicationStatus.SAVED,
+                pageable
+        ).map(this::toResponse);
+    }
+
     // Get job offer by ID
     public JobOfferResponse getById(Long id) {
         return toResponse(findJobOffer(id));

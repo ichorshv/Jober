@@ -59,6 +59,20 @@ public List<PopularJobOfferResponse> getPopularJobOffers(
 }
 
 
+    // Get active job offers not yet applied to by current student
+    @GetMapping("/not-applied")
+    public PageResponse<JobOfferResponse> getNotAppliedJobOffers(
+            CurrentUser user,
+            Pageable pageable) {
+
+        return PageResponse.from(
+                jobOfferService.getNotAppliedJobOffers(
+                        user,
+                        pageable
+                )
+        );
+    }
+
     // Get a job offer by ID
     @GetMapping("/{id}")
     public JobOfferResponse getById(
