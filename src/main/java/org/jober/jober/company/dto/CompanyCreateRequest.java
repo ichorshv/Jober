@@ -22,6 +22,7 @@ public record CompanyCreateRequest(
 
         @NotBlank
         @Email
+        @Size(max = 255)
         String email,
 
         @NotBlank

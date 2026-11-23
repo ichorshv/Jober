@@ -131,6 +131,81 @@ class CompanyServiceTest {
         ));
     }
 
+
+
+@Test
+void duplicateCompanyNameReturnsConflict() {
+    CompanyCreateRequest request = createRequest();
+
+    when(companyRepository.existsByNameIgnoreCase("Test Company"))
+            .thenReturn(true);
+
+    assertThrows(ConflictException.class,
+            () -> companyService.create(request, admin));
+
+    verify(companyRepository, never())
+            .saveAndFlush(any(Company.class));
+}
+
+@Test
+void duplicateCompanyNameWithDifferentCaseReturnsConflict() {
+    CompanyCreateRequest request = new CompanyCreateRequest(
+            "TEST COMPANY",
+            "https://example.com",
+            "Software",
+            "Sofia",
+            "new@example.com",
+            "password123"
+    );
+
+    when(companyRepository.existsByNameIgnoreCase("TEST COMPANY"))
+            .thenReturn(true);
+
+    assertThrows(ConflictException.class,
+            () -> companyService.create(request, admin));
+
+    verify(companyRepository)
+            .existsByNameIgnoreCase("TEST COMPANY");
+
+    verify(companyRepository, never())
+            .saveAndFlush(any(Company.class));
+}
+
+@Test
+void studentEmailCannotBeUsedForCompany() {
+    CompanyCreateRequest request = createRequest();
+
+    when(jdbcTemplate.queryForObject(
+            anyString(),
+            eq(Integer.class),
+            eq("new@example.com")
+    )).thenReturn(1);
+
+    assertThrows(ConflictException.class,
+            () -> companyService.create(request, admin));
+
+    verify(companyRepository, never())
+            .saveAndFlush(any(Company.class));
+}
+
+@Test
+void companyCannotUpdateAnotherCompanyById() {
+    CompanyUpdateRequest request = new CompanyUpdateRequest(
+            "Updated Company",
+            "https://example.com",
+            "Software",
+            "Sofia",
+            "company@example.com"
+    );
+
+    assertThrows(ForbiddenException.class,
+            () -> companyService.updateById(
+                    1L, request, companyUser));
+
+    verifyNoInteractions(companyRepository);
+}
+
+
     private CompanyCreateRequest createRequest() {
         return new CompanyCreateRequest(
                 "Test Company",
