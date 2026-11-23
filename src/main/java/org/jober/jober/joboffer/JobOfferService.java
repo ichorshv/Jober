@@ -13,7 +13,6 @@ import org.jober.jober.joboffer.dto.JobOfferUpdateRequest;
 import org.jober.jober.joboffer.dto.JobOfferResponse;
 import org.jober.jober.common.enums.ApplicationStatus;
 import org.jober.jober.joboffer.dto.PopularJobOfferResponse;
-import org.jober.jober.common.enums.ApplicationStatus;
 import java.util.List;
 
 import org.jober.jober.common.enums.JobType;
