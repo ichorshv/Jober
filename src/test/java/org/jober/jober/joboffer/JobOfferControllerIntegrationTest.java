@@ -193,6 +193,46 @@ class JobOfferControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+
+        @Test
+    void getJobOffersFiltersByTypeAndLocation() throws Exception {
+        createTestOffer("Unique Filter Internship", true);
+
+        mockMvc.perform(get("/api/job-offers")
+                    .param("type", "INTERNSHIP")
+                    .param("location", "Sofia")
+                    .param("size", "100"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath(
+                    "$.content[?(@.title == 'Unique Filter Internship')]")
+                    .exists());
+    }
+
+
+        @Test
+void getJobOffersFiltersByActiveStatus() throws Exception {
+    createTestOffer("Inactive Filter Test", false);
+
+    mockMvc.perform(get("/api/job-offers")
+                    .param("active", "true")
+                    .param("size", "100"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath(
+                    "$.content[?(@.title == 'Inactive Filter Test')]")
+                    .doesNotExist());
+}
+
+        @Test
+void getJobOffersSupportsPagination() throws Exception {
+    mockMvc.perform(get("/api/job-offers")
+                    .param("page", "0")
+                    .param("size", "2"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content.length()").value(2))
+            .andExpect(jsonPath("$.page").value(0))
+            .andExpect(jsonPath("$.size").value(2));
+}
+
     // Helper method used by the integration test
     private void createTestApplication(
             Long studentId,
