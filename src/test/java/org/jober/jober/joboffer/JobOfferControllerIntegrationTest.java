@@ -12,6 +12,7 @@ import org.jober.jober.common.enums.ApplicationStatus;
 import org.jober.jober.common.enums.JobType;
 import org.jober.jober.student.Student;
 
+
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = JoberApplication.class)
 @AutoConfigureMockMvc
@@ -231,6 +233,119 @@ void getJobOffersSupportsPagination() throws Exception {
             .andExpect(jsonPath("$.content.length()").value(2))
             .andExpect(jsonPath("$.page").value(0))
             .andExpect(jsonPath("$.size").value(2));
+}
+
+
+
+@Test
+void createJobOfferWithBlankTitleReturns400() throws Exception {
+    String body = """
+            {
+              "title": "",
+              "jobType": "INTERNSHIP",
+              "location": "Sofia"
+            }
+            """;
+
+    mockMvc.perform(post("/api/job-offers")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "COMPANY")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body))
+            .andExpect(status().isBadRequest());
+}
+
+
+
+@Test
+void createJobOfferWithoutJobTypeReturns400() throws Exception {
+    String body = """
+            {
+              "title": "Java Internship",
+              "location": "Sofia"
+            }
+            """;
+
+    mockMvc.perform(post("/api/job-offers")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "COMPANY")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body))
+            .andExpect(status().isBadRequest());
+}
+
+
+@Test
+void createJobOfferWithInvalidSalaryRangeReturns400() throws Exception {
+    String body = """
+            {
+              "title": "Java Internship",
+              "jobType": "INTERNSHIP",
+              "salaryMin": 2500,
+              "salaryMax": 1500
+            }
+            """;
+
+    mockMvc.perform(post("/api/job-offers")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "COMPANY")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body))
+            .andExpect(status().isBadRequest());
+}
+
+
+@Test
+void companyCanDeleteOwnJobOffer() throws Exception {
+    JobOffer offer = createTestOffer("Offer To Delete", true);
+    Long offerId = offer.getId();
+
+    mockMvc.perform(delete("/api/job-offers/{id}", offerId)
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "COMPANY"))
+            .andExpect(status().isNoContent());
+
+    mockMvc.perform(get("/api/job-offers/{id}", offerId))
+            .andExpect(status().isNotFound());
+}
+
+
+
+@Test
+void companyCannotDeleteAnotherCompanyOffer() throws Exception {
+    JobOffer offer = createTestOffer("Protected Offer", true);
+    Long offerId = offer.getId();
+
+    mockMvc.perform(delete("/api/job-offers/{id}", offerId)
+                    .header("X-User-Id", "2")
+                    .header("X-User-Role", "COMPANY"))
+            .andExpect(status().isForbidden());
+
+    mockMvc.perform(get("/api/job-offers/{id}", offerId))
+            .andExpect(status().isOk());
+}
+
+@Test
+void deletingJobOfferWithApplicationsShouldNotDeleteApplications()
+        throws Exception {
+
+    JobOffer offer = createTestOffer(
+            "Offer With Applications", true);
+
+    createTestApplication(
+            1L, offer, ApplicationStatus.APPLIED);
+
+    applicationRepository.flush();
+
+    mockMvc.perform(delete("/api/job-offers/{id}", offer.getId())
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "COMPANY"))
+            .andExpect(status().isConflict());
+
+    assertTrue(applicationRepository.findAll().stream()
+            .anyMatch(application ->
+                    application.getJobOffer().getId()
+                            .equals(offer.getId())));
 }
 
     // Helper method used by the integration test

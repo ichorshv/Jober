@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.jober.jober.application.ApplicationRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +36,9 @@ class JobOfferServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private ApplicationRepository applicationRepository;
 
     @InjectMocks
     private JobOfferService jobOfferService;
