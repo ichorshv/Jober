@@ -9,6 +9,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.jober.jober.application.Application;
+import java.util.Set;
+import java.util.HashSet;
+
 @Entity
 @Table(name = "job_offers")
 public class JobOffer {
@@ -20,6 +24,9 @@ public class JobOffer {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
+
+    @OneToMany(mappedBy = "jobOffer")
+    private Set<Application> applications = new HashSet<>();
 
     @Column(nullable = false, length = 200)
     private String title;
@@ -135,4 +142,12 @@ public class JobOffer {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
+    public Set<Application> getApplications() {
+    return applications;
+}
+
+public void setApplications(Set<Application> applications) {
+    this.applications = applications;
+}
 }

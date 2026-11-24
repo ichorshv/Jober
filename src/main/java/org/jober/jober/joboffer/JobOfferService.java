@@ -13,7 +13,8 @@ import org.jober.jober.joboffer.dto.JobOfferUpdateRequest;
 import org.jober.jober.joboffer.dto.JobOfferResponse;
 import org.jober.jober.common.enums.ApplicationStatus;
 import org.jober.jober.joboffer.dto.PopularJobOfferResponse;
-import org.jober.jober.common.enums.ApplicationStatus;
+import org.jober.jober.application.ApplicationRepository;
+import org.jober.jober.common.exception.ConflictException;
 import java.util.List;
 
 import org.jober.jober.common.enums.JobType;
@@ -34,14 +35,17 @@ public class JobOfferService {
 
     private final JobOfferRepository jobOfferRepository;
     private final CompanyRepository companyRepository;
+    private final ApplicationRepository applicationRepository;
 
-    public JobOfferService(
-            JobOfferRepository jobOfferRepository,
-            CompanyRepository companyRepository) {
+   public JobOfferService(
+        JobOfferRepository jobOfferRepository,
+        CompanyRepository companyRepository,
+        ApplicationRepository applicationRepository) {
 
         this.jobOfferRepository = jobOfferRepository;
         this.companyRepository = companyRepository;
-    }
+        this.applicationRepository = applicationRepository;
+}
 
 
 public Page<JobOfferResponse> getAll(
@@ -236,14 +240,19 @@ public List<PopularJobOfferResponse> getPopularJobOffers(
     @Transactional
     public void delete(Long id, CurrentUser user) {
 
-        user.requireRole(UserRole.COMPANY, UserRole.ADMIN);
+    user.requireRole(UserRole.COMPANY, UserRole.ADMIN);
 
-        JobOffer jobOffer = findJobOffer(id);
+    JobOffer jobOffer = findJobOffer(id);
 
-        checkOwnership(jobOffer, user);
+    checkOwnership(jobOffer, user);
 
-        jobOfferRepository.delete(jobOffer);
+    if (applicationRepository.existsByJobOfferId(id)) {
+        throw new ConflictException(
+                "Cannot delete job offer with existing applications");
     }
+
+    jobOfferRepository.delete(jobOffer);
+}
 
     // Find offer or throw 404
     private JobOffer findJobOffer(Long id) {

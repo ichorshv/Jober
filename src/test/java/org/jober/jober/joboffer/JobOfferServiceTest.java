@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.jober.jober.application.ApplicationRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +36,9 @@ class JobOfferServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private ApplicationRepository applicationRepository;
 
     @InjectMocks
     private JobOfferService jobOfferService;
@@ -207,6 +211,62 @@ class JobOfferServiceTest {
         verify(jobOfferRepository, never())
                 .saveAndFlush(any(JobOffer.class));
     }
+
+        @Test
+void companyCanCloseOwnJobOffer() {
+    when(jobOfferRepository.findById(10L))
+            .thenReturn(Optional.of(jobOffer));
+
+    when(jobOfferRepository.saveAndFlush(any(JobOffer.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+    var response = jobOfferService.close(10L, companyUser);
+
+    assertFalse(response.active());
+    verify(jobOfferRepository).saveAndFlush(jobOffer);
+}
+
+        @Test
+void companyCannotCloseAnotherCompanyOffer() {
+    Company otherCompany = new Company();
+    otherCompany.setId(3L);
+    jobOffer.setCompany(otherCompany);
+
+    when(jobOfferRepository.findById(10L))
+            .thenReturn(Optional.of(jobOffer));
+
+    assertThrows(ForbiddenException.class,
+            () -> jobOfferService.close(10L, companyUser));
+
+    verify(jobOfferRepository, never())
+            .saveAndFlush(any(JobOffer.class));
+}
+
+        @Test
+void companyCanDeleteOwnJobOffer() {
+    when(jobOfferRepository.findById(10L))
+            .thenReturn(Optional.of(jobOffer));
+
+    jobOfferService.delete(10L, companyUser);
+
+    verify(jobOfferRepository).delete(jobOffer);
+}
+
+        @Test
+void companyCannotDeleteAnotherCompanyOffer() {
+    Company otherCompany = new Company();
+    otherCompany.setId(3L);
+    jobOffer.setCompany(otherCompany);
+
+    when(jobOfferRepository.findById(10L))
+            .thenReturn(Optional.of(jobOffer));
+
+    assertThrows(ForbiddenException.class,
+            () -> jobOfferService.delete(10L, companyUser));
+
+    verify(jobOfferRepository, never())
+            .delete(any(JobOffer.class));
+}
 
     private JobOfferCreateRequest createRequest(Long companyId) {
         return new JobOfferCreateRequest(
