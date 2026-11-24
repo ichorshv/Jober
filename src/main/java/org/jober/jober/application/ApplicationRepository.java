@@ -12,6 +12,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     boolean existsByJobOfferId(Long jobOfferId);
 
+    boolean existsByStudentIdAndJobOfferId(Long studentId, Long jobOfferId);
+
     Page<Application> findByStudentId(Long studentId, Pageable pageable);
 
     @Query("""
