@@ -16,8 +16,10 @@ import org.jober.jober.student.Student;
 import org.jober.jober.student.StudentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -62,7 +64,8 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationResponse createApplicaion(CurrentUser currentUser, ApplicationRequest request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApplicationResponse createApplication(CurrentUser currentUser, ApplicationRequest request) {
         if (!currentUser.isStudent()) {
             throw new ForbiddenException("Only students can create application");
         }
