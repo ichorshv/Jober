@@ -18,7 +18,5 @@ public record InterviewResponse(
         InterviewOutcome outcome,
         LocalDateTime scheduledAt,
         String locationOrLink,
-        String notes,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        String notes
 ) {}
