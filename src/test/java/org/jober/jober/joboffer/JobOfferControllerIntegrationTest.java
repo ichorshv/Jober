@@ -423,6 +423,52 @@ void companyCannotAccessNotAppliedOffers() throws Exception {
             .andExpect(status().isForbidden());
 }
 
+@Test
+void withdrawnApplicationDoesNotAppearInNotAppliedOffers()
+        throws Exception {
+
+    JobOffer offer = createTestOffer(
+            "Withdrawn Application Test", true);
+
+    createTestApplication(
+            1L, offer, ApplicationStatus.WITHDRAWN);
+
+    applicationRepository.flush();
+
+    mockMvc.perform(get("/api/job-offers/not-applied")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "STUDENT")
+                    .param("page", "0")
+                    .param("size", "100"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath(
+                    "$.content[?(@.title == 'Withdrawn Application Test')]")
+                    .doesNotExist());
+}
+
+@Test
+void rejectedApplicationDoesNotAppearInNotAppliedOffers()
+        throws Exception {
+
+    JobOffer offer = createTestOffer(
+            "Rejected Application Test", true);
+
+    createTestApplication(
+            1L, offer, ApplicationStatus.REJECTED);
+
+    applicationRepository.flush();
+
+    mockMvc.perform(get("/api/job-offers/not-applied")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "STUDENT")
+                    .param("page", "0")
+                    .param("size", "100"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath(
+                    "$.content[?(@.title == 'Rejected Application Test')]")
+                    .doesNotExist());
+}
+
 // Helper method for creating test job offers
 private JobOffer createTestOffer(
         String title,
