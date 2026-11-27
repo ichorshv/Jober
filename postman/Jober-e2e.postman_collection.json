@@ -1,0 +1,857 @@
+{
+  "info": {
+    "name": "Jober E2E",
+    "description": "Company creates an offer, student applies, company changes the status and schedules an interview, admin sees the ranking. Run in order with the Collection Runner. Can be re-run without restarting the app.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Login",
+      "item": [
+        {
+          "name": "Company login (Acme)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Role is COMPANY\", () => pm.expect(body.role).to.eql(\"COMPANY\"));",
+                  "pm.collectionVariables.set(\"companyId\", body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hr@acme.example\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Student login (Elena)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Role is STUDENT\", () => pm.expect(body.role).to.eql(\"STUDENT\"));",
+                  "pm.collectionVariables.set(\"studentId\", body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"elena@student.example\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Admin login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Role is ADMIN\", () => pm.expect(body.role).to.eql(\"ADMIN\"));",
+                  "pm.collectionVariables.set(\"adminId\", body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@jobtracker.example\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Company creates job offer",
+      "item": [
+        {
+          "name": "Create job offer",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"runId\", Date.now());",
+                  "const d = new Date(); d.setDate(d.getDate() + 30);",
+                  "pm.collectionVariables.set(\"deadline\", d.toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Offer belongs to the company\", () => pm.expect(body.companyId).to.eql(Number(pm.collectionVariables.get(\"companyId\"))));",
+                  "pm.collectionVariables.set(\"offerId\", body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{companyId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "COMPANY"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/job-offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "job-offers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"E2E Java Intern {{runId}}\",\n  \"description\": \"Created by the Postman e2e run\",\n  \"jobType\": \"INTERNSHIP\",\n  \"location\": \"Sofia\",\n  \"salaryMin\": 1000,\n  \"salaryMax\": 1500,\n  \"deadline\": \"{{deadline}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Student applies",
+      "item": [
+        {
+          "name": "Offer is in not-applied list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const ids = pm.response.json().content.map(o => o.id);",
+                  "pm.test(\"New offer is listed\", () => pm.expect(ids).to.include(Number(pm.collectionVariables.get(\"offerId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{studentId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "STUDENT"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/job-offers/not-applied?size=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "job-offers",
+                "not-applied"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Save application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status is SAVED\", () => pm.expect(body.status).to.eql(\"SAVED\"));",
+                  "pm.collectionVariables.set(\"applicationId\", body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{studentId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "STUDENT"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobOfferId\": \"{{offerId}}\",\n  \"notes\": \"Applied from the e2e run\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Apply",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Status is APPLIED\", () => pm.expect(pm.response.json().status).to.eql(\"APPLIED\"));",
+                  "pm.test(\"appliedDate is set\", () => pm.expect(pm.response.json().appliedDate).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{studentId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "STUDENT"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}/apply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{applicationId}}",
+                "apply"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Student cannot change status (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{studentId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "STUDENT"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{applicationId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INTERVIEWING\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Company moves the application and schedules an interview",
+      "item": [
+        {
+          "name": "Company sees the application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const ids = pm.response.json().content.map(a => a.id);",
+                  "pm.test(\"Application is listed\", () => pm.expect(ids).to.include(Number(pm.collectionVariables.get(\"applicationId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{companyId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "COMPANY"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/company/applications?size=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "applications"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Invalid transition APPLIED -> OFFER (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{companyId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "COMPANY"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{applicationId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"OFFER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Status -> INTERVIEWING",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Status is INTERVIEWING\", () => pm.expect(pm.response.json().status).to.eql(\"INTERVIEWING\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{companyId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "COMPANY"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{applicationId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INTERVIEWING\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Schedule interview",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date(); d.setDate(d.getDate() + 3); d.setHours(10, 0, 0, 0);",
+                  "const pad = n => String(n).padStart(2, \"0\");",
+                  "pm.collectionVariables.set(\"scheduledAt\", `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T10:00:00`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Outcome is PENDING\", () => pm.expect(body.outcome).to.eql(\"PENDING\"));",
+                  "pm.collectionVariables.set(\"interviewId\", body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{companyId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "COMPANY"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/interviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "interviews"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": \"{{applicationId}}\",\n  \"type\": \"TECHNICAL\",\n  \"scheduledAt\": \"{{scheduledAt}}\",\n  \"locationOrLink\": \"https://meet.example/e2e\",\n  \"notes\": \"Technical round\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Student sees the interview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const ids = pm.response.json().map(i => i.id);",
+                  "pm.test(\"Interview is listed\", () => pm.expect(ids).to.include(Number(pm.collectionVariables.get(\"interviewId\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{studentId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "STUDENT"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/interviews/application/{{applicationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "interviews",
+                "application",
+                "{{applicationId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Interview outcome -> PASSED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Outcome is PASSED\", () => pm.expect(pm.response.json().outcome).to.eql(\"PASSED\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{companyId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "COMPANY"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/interviews/{{interviewId}}/outcome",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "interviews",
+                "{{interviewId}}",
+                "outcome"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"outcome\": \"PASSED\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Status -> OFFER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Status is OFFER\", () => pm.expect(pm.response.json().status).to.eql(\"OFFER\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{companyId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "COMPANY"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{applicationId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"OFFER\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Admin sees the ranking",
+      "item": [
+        {
+          "name": "Company ranking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json();",
+                  "pm.test(\"Ranking is not empty\", () => pm.expect(rows).to.be.an(\"array\").that.is.not.empty);",
+                  "pm.test(\"Acme Software is ranked\", () => pm.expect(rows.map(r => r.company)).to.include(\"Acme Software\"));",
+                  "pm.test(\"Every row has a rank\", () => rows.forEach(r => pm.expect(r.companyRank).to.be.a(\"number\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{adminId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "ADMIN"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stats/company-ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stats",
+                "company-ranking"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Student cannot see ranking (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{studentId}}"
+              },
+              {
+                "key": "X-User-Role",
+                "value": "STUDENT"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stats/company-ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stats",
+                "company-ranking"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "companyId",
+      "value": ""
+    },
+    {
+      "key": "studentId",
+      "value": ""
+    },
+    {
+      "key": "adminId",
+      "value": ""
+    },
+    {
+      "key": "offerId",
+      "value": ""
+    },
+    {
+      "key": "applicationId",
+      "value": ""
+    },
+    {
+      "key": "interviewId",
+      "value": ""
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "deadline",
+      "value": ""
+    },
+    {
+      "key": "scheduledAt",
+      "value": ""
+    }
+  ]
+}
