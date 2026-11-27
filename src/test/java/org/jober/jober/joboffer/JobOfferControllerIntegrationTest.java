@@ -181,19 +181,22 @@ class JobOfferControllerIntegrationTest {
 
         // Request offers with at least 2 applications
         mockMvc.perform(get("/api/job-offers/popular")
-                        .param("minApplications", "2"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath(
-                        "$[?(@.title == 'Popular Test Internship')].applicationCount")
-                        .value(contains(2)));
+                .param("min", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath(
+                "$[?(@.title == 'Popular Test Internship')].applicants")
+                .value(contains(2)))
+        .andExpect(jsonPath(
+                "$[?(@.title == 'Popular Test Internship')].company")
+                .value(contains("Acme Software")));
     }
 
     @Test
-    void popularOffersRejectInvalidMinimum() throws Exception {
-        mockMvc.perform(get("/api/job-offers/popular")
-                        .param("minApplications", "0"))
-                .andExpect(status().isBadRequest());
-    }
+void popularOffersRejectInvalidMinimum() throws Exception {
+    mockMvc.perform(get("/api/job-offers/popular")
+                    .param("min", "0"))
+            .andExpect(status().isBadRequest());
+}
 
 
         @Test
@@ -418,6 +421,52 @@ void companyCannotAccessNotAppliedOffers() throws Exception {
                     .header("X-User-Id", "1")
                     .header("X-User-Role", "COMPANY"))
             .andExpect(status().isForbidden());
+}
+
+@Test
+void withdrawnApplicationDoesNotAppearInNotAppliedOffers()
+        throws Exception {
+
+    JobOffer offer = createTestOffer(
+            "Withdrawn Application Test", true);
+
+    createTestApplication(
+            1L, offer, ApplicationStatus.WITHDRAWN);
+
+    applicationRepository.flush();
+
+    mockMvc.perform(get("/api/job-offers/not-applied")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "STUDENT")
+                    .param("page", "0")
+                    .param("size", "100"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath(
+                    "$.content[?(@.title == 'Withdrawn Application Test')]")
+                    .doesNotExist());
+}
+
+@Test
+void rejectedApplicationDoesNotAppearInNotAppliedOffers()
+        throws Exception {
+
+    JobOffer offer = createTestOffer(
+            "Rejected Application Test", true);
+
+    createTestApplication(
+            1L, offer, ApplicationStatus.REJECTED);
+
+    applicationRepository.flush();
+
+    mockMvc.perform(get("/api/job-offers/not-applied")
+                    .header("X-User-Id", "1")
+                    .header("X-User-Role", "STUDENT")
+                    .param("page", "0")
+                    .param("size", "100"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath(
+                    "$.content[?(@.title == 'Rejected Application Test')]")
+                    .doesNotExist());
 }
 
 // Helper method for creating test job offers

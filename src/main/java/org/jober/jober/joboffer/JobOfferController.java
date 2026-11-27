@@ -7,7 +7,6 @@ import org.jober.jober.common.web.CurrentUser;
 import org.jober.jober.joboffer.dto.JobOfferCreateRequest;
 import org.jober.jober.joboffer.dto.JobOfferUpdateRequest;
 import org.jober.jober.joboffer.dto.JobOfferResponse;
-import org.jober.jober.joboffer.dto.PopularJobOfferResponse;
 import java.util.List;
 
 import org.jober.jober.common.enums.JobType;
@@ -18,6 +17,8 @@ import java.math.BigDecimal;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import org.jober.jober.joboffer.dto.JobOfferStats;
 
 @RestController
 @RequestMapping("/api/job-offers")
@@ -52,10 +53,10 @@ public PageResponse<JobOfferResponse> getAll(
 
     // Get most popular job offers
 @GetMapping("/popular")
-public List<PopularJobOfferResponse> getPopularJobOffers(
-        @RequestParam(defaultValue = "1") long minApplications) {
+public List<JobOfferStats> getPopularJobOffers(
+        @RequestParam(name = "min", defaultValue = "1") long min) {
 
-    return jobOfferService.getPopularJobOffers(minApplications);
+    return jobOfferService.getPopularJobOffers(min);
 }
 
 
