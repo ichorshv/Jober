@@ -181,19 +181,22 @@ class JobOfferControllerIntegrationTest {
 
         // Request offers with at least 2 applications
         mockMvc.perform(get("/api/job-offers/popular")
-                        .param("minApplications", "2"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath(
-                        "$[?(@.title == 'Popular Test Internship')].applicationCount")
-                        .value(contains(2)));
+                .param("min", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath(
+                "$[?(@.title == 'Popular Test Internship')].applicants")
+                .value(contains(2)))
+        .andExpect(jsonPath(
+                "$[?(@.title == 'Popular Test Internship')].company")
+                .value(contains("Acme Software")));
     }
 
     @Test
-    void popularOffersRejectInvalidMinimum() throws Exception {
-        mockMvc.perform(get("/api/job-offers/popular")
-                        .param("minApplications", "0"))
-                .andExpect(status().isBadRequest());
-    }
+void popularOffersRejectInvalidMinimum() throws Exception {
+    mockMvc.perform(get("/api/job-offers/popular")
+                    .param("min", "0"))
+            .andExpect(status().isBadRequest());
+}
 
 
         @Test

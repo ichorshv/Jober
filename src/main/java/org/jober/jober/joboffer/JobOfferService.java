@@ -12,7 +12,6 @@ import org.jober.jober.joboffer.dto.JobOfferCreateRequest;
 import org.jober.jober.joboffer.dto.JobOfferUpdateRequest;
 import org.jober.jober.joboffer.dto.JobOfferResponse;
 import org.jober.jober.common.enums.ApplicationStatus;
-import org.jober.jober.joboffer.dto.PopularJobOfferResponse;
 import org.jober.jober.application.ApplicationRepository;
 import org.jober.jober.common.exception.ConflictException;
 import java.util.List;
@@ -25,6 +24,8 @@ import org.springframework.data.jpa.domain.Specification;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.jober.jober.joboffer.dto.JobOfferStats;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -103,7 +104,7 @@ public Page<JobOfferResponse> getAll(
 }
 
     // Get popular job offers based on application count
-public List<PopularJobOfferResponse> getPopularJobOffers(
+public List<JobOfferStats> getPopularJobOffers(
         long minApplications) {
 
     if (minApplications < 1) {
